@@ -1,0 +1,6 @@
+0. streamlit_gpt.txt -> streamlit_gpt.py로 확장자명 변경
+1. openai api key 발급(key는 나중에 조회못하므로 발급받자마자 백업하기)
+2. opeai 요금충전하기(5$시작)
+3. 새로 가상환경만들고 streamlit, openai 설치 (pip install streamlit openai)
+4. streamlit_gpt.py 소스의 api_key에서 자기가 발급받은 키 붙여넣기(sk-proj- 로 시작)
+5. streamlit run streamlit_gpt.py 명령어로 실행하기
