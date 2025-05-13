@@ -1,0 +1,100 @@
+import numpy as np
+import pandas as pd
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, BatchNormalization, Dropout
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import RobustScaler
+from sklearn.utils import class_weight
+from sklearn.decomposition import PCA
+from sklearn.metrics import accuracy_score
+import time, datetime
+from xgboost import XGBClassifier
+import tensorflow as tf
+
+# 1. Load Data
+path = './_data/kaggle/santander/'
+train_csv = pd.read_csv(path + 'train.csv', index_col=0)
+test_csv = pd.read_csv(path + 'test.csv', index_col=0)
+submission_csv = pd.read_csv(path + 'sample_submission.csv', index_col=0)
+
+x = train_csv.drop(['target'], axis=1)
+y = train_csv['target']
+
+x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=0.8, shuffle=True, random_state=55)
+
+# 2. Preprocessing: Scaling + PCA
+scaler = RobustScaler()
+x_train = scaler.fit_transform(x_train)
+x_test = scaler.transform(x_test)
+test_scaled = scaler.transform(test_csv)
+
+pca = PCA(n_components=50)
+x_train = pca.fit_transform(x_train)
+x_test = pca.transform(x_test)
+test_scaled = pca.transform(test_scaled)
+
+# 3. Class Weights
+weights = class_weight.compute_class_weight(class_weight='balanced', classes=np.unique(y_train), y=y_train)
+class_weights = dict(enumerate(weights))
+
+# 4. Keras Model
+model = Sequential([
+    Dense(128, input_dim=50, activation='relu'),
+    BatchNormalization(),
+    Dropout(0.3),
+    Dense(256, activation='relu'),
+    BatchNormalization(),
+    Dropout(0.3),
+    Dense(128, activation='relu'),
+    BatchNormalization(),
+    Dropout(0.2),
+    Dense(1, activation='sigmoid')
+])
+
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+es = EarlyStopping(monitor='val_loss', mode='min', patience=30, restore_best_weights=True)
+
+date = datetime.datetime.now().strftime("%m%d_%H%M")
+path_save = './_save/keras30_scaler/santander/'
+filepath = path_save + f'k30_{date}_' + '{epoch:04d}-{val_loss:.4f}.hdf5'
+mcp = ModelCheckpoint(monitor='val_loss', mode='auto', save_best_only=True, filepath=filepath)
+
+start = time.time()
+hist = model.fit(x_train, y_train, 
+                 validation_split=0.2, 
+                 epochs=500, 
+                 batch_size=512, 
+                 callbacks=[es, mcp], 
+                 class_weight=class_weights,
+                 verbose=1)
+end = time.time()
+
+# 5. Evaluation
+loss, acc = model.evaluate(x_test, y_test)
+print(f"Eval Loss: {loss:.4f}, Accuracy: {acc:.4f}, Time: {round(end - start, 2)} sec")
+
+# 6. XGBoost 앙상블
+model_xgb = XGBClassifier(n_estimators=500, max_depth=5, learning_rate=0.03, use_label_encoder=False, eval_metric='logloss')
+model_xgb.fit(x_train, y_train)
+
+pred_nn = model.predict(test_scaled).reshape(-1)
+pred_xgb = model_xgb.predict_proba(test_scaled)[:, 1]
+
+# Soft voting 앙상블
+final_pred = (pred_nn + pred_xgb) / 2
+submission_csv['target'] = final_pred
+submission_csv.to_csv(path + f'sample_submission_{date}_ensemble.csv')
+print(f"Submission saved as sample_submission_{date}_ensemble.csv")
+
+# GPU 확인
+gpus = tf.config.list_physical_devices('GPU')
+print("GPU 상태:", '사용 가능' if gpus else '사용 불가')
+
+# Eval Loss: 0.4226, Accuracy: 0.8436, Time: 69.78 sec
+# Submission saved as sample_submission_0609_1129_ensemble.csv
+# GPU 상태: 사용 가능
+
+# Eval Loss: 0.4446, Accuracy: 0.8287, Time: 62.89 sec
+# Submission saved as sample_submission_0609_1143_ensemble.csv
+# GPU 상태: 사용 가능
