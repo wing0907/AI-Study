@@ -6,3 +6,22 @@ node_modules/
 .env
 .venv/
 venv/
+# === never track huge artifacts ===
+**/chroma_dbs/
+**/Qwen2.5-7B-Instruct/
+**/save/cat_dog/
+**/save_npy/
+
+# common big types
+*.safetensors
+*.h5
+*.hdf5
+*.npy
+*.bin
+*.pt
+*.pth
+*.onnx
+*.zip
+*.7z
+*.tar
+*.mp4
