@@ -1,0 +1,46 @@
+0811 수업내용
+m63_PF02_FI_PCA.py  -> 내용없음
+m64_make_pipeline1.py
+m64_make_pipeline2_classifier.py
+m64_make_pipeline3_regressor.py
+m64_make_pipeline4_classifier_좀더깔끔한버전.py
+m64_make_pipeline4_regressor_좀더깔끔한버전.py
+m65_make_pipeline_PCA1.py
+m65_make_pipeline_PCA2_classifier.py
+m65_make_pipeline_PCA3_regressor.py
+m66_Pipeline1.py
+m67_Pipeline_GridSearch.py
+m68_Pipeline_GridSearch02_cal&dia.py
+m68_Pipeline_GridSearch06_can&dig.py
+m69_make_pipeline_GridSearch.py
+m70_make_pipeline_GS02_cal&dia.py
+m70_make_pipeline_GS06_can&dig.py
+
+
+
+1. Ubuntu 다운
+검색창에 ubuntu download
+Download Ubuntu Desktop 클릭
+Ubuntu 24.04.3 LTS  --> download 클릭
+리눅스의 하나
+
+
+2. VirtualBox 다운
+검색창에 VirtualBox download
+Downloads 클릭
+Windows hosts 클릭 (버전 7.1.12 현최신버전)
+가상머신 (pc안에 pc를 설치하는 것)
+
+
+3. vcredist_x64.exe
+검색창에 vcredist_x64.exe
+지원되는 최신 Visual C++ 재배포 가능 패키지 다운로드 클릭
+스크롤 다운해서
+https://aka.ms/vs/17/release/vc_redist.x64.exe 클릭 (3개 중 3번째)
+
+
+4. PuTTy
+검색창에 PuTTy
+scroll down해서
+Download Putty (0.83) for Windows, Linux and Mac 클릭 (PuTTYgen)
+putty-64bit-0.83-installer.msi 클릭 (4개 중 2번째)
