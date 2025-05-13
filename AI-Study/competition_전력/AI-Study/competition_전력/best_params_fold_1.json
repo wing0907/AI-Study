@@ -1,0 +1,11 @@
+{
+    "optimizer": "rmsprop",
+    "node5": 8,
+    "node4": 16,
+    "node3": 32,
+    "node2": 32,
+    "node1": 16,
+    "drop": 0.3,
+    "batch_size": 16,
+    "activation": "relu"
+}
