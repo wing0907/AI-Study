@@ -1,0 +1,99 @@
+############ Optuna + Keras 튜닝 예제 #############
+from keras.models import Sequential
+from keras.layers import Dense, Dropout
+from keras.optimizers import Adam
+from keras.utils import to_categorical
+
+y_class = to_categorical(y_label)  # Keras용 one-hot
+
+def objective(trial):
+    model = Sequential()
+    model.add(Dense(trial.suggest_int("units1", 64, 256), activation='relu', input_shape=(x_scaled.shape[1],)))
+    model.add(Dropout(trial.suggest_float("dropout1", 0.1, 0.5)))
+    model.add(Dense(trial.suggest_int("units2", 32, 128), activation='relu'))
+    model.add(Dropout(trial.suggest_float("dropout2", 0.1, 0.5)))
+    model.add(Dense(y_class.shape[1], activation='softmax'))
+
+    lr = trial.suggest_float("learning_rate", 1e-4, 1e-2)
+    model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=lr), metrics=['accuracy'])
+
+    history = model.fit(x_scaled, y_class, epochs=30, batch_size=trial.suggest_categorical("batch_size", [32, 64, 128]),
+                        validation_split=0.2, verbose=0)
+    
+    val_acc = max(history.history['val_accuracy'])
+    return val_acc
+
+study = optuna.create_study(direction="maximize")
+study.optimize(objective, n_trials=30)
+print("Best Keras Parameters:", study.best_params)
+
+
+############ Optuna 결과 저장 / 불러오기 #############
+# 저장
+import joblib
+joblib.dump(study, "optuna_study.pkl")
+
+# 불러오기
+loaded_study = joblib.load("optuna_study.pkl")
+
+print("🔁 불러온 study 결과:", loaded_study.best_params)
+
+
+############ Optuna + LightGBM 예제 #############
+import lightgbm as lgb
+
+def objective(trial):
+    param = {
+        'objective': 'multiclass',
+        'num_class': len(set(y_label)),
+        'metric': 'multi_logloss',
+        'num_leaves': trial.suggest_int('num_leaves', 20, 200),
+        'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3),
+        'feature_fraction': trial.suggest_float('feature_fraction', 0.5, 1.0),
+        'bagging_fraction': trial.suggest_float('bagging_fraction', 0.5, 1.0),
+        'bagging_freq': trial.suggest_int('bagging_freq', 1, 10),
+    }
+
+    x_train_, x_val_, y_train_, y_val_ = train_test_split(x_scaled, y_label, test_size=0.2, random_state=42)
+    train_data = lgb.Dataset(x_train_, label=y_train_)
+    val_data = lgb.Dataset(x_val_, label=y_val_)
+
+    model = lgb.train(param, train_data, valid_sets=[val_data], early_stopping_rounds=20, verbose_eval=False)
+    preds = model.predict(x_val_)
+    pred_labels = np.argmax(preds, axis=1)
+    return accuracy_score(y_val_, pred_labels)
+
+study = optuna.create_study(direction="maximize")
+study.optimize(objective, n_trials=30)
+print("Best LightGBM Params:", study.best_params)
+
+
+############ Optuna + CatBoost 예제 #############
+import optuna
+from catboost import CatBoostClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+
+x_train, x_val, y_train, y_val = train_test_split(x_scaled, y_label, test_size=0.2, random_state=42)
+
+def objective(trial):
+    params = {
+        'iterations': 500,
+        'depth': trial.suggest_int('depth', 4, 10),
+        'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3),
+        'l2_leaf_reg': trial.suggest_float('l2_leaf_reg', 1e-2, 10.0),
+        'border_count': trial.suggest_int('border_count', 32, 255),
+        'loss_function': 'MultiClass',
+        'verbose': 0
+    }
+
+    model = CatBoostClassifier(**params)
+    model.fit(x_train, y_train, eval_set=(x_val, y_val), early_stopping_rounds=50, verbose=0)
+    preds = model.predict(x_val)
+    return accuracy_score(y_val, preds)
+
+study = optuna.create_study(direction='maximize')
+study.optimize(objective, n_trials=30)
+
+print("Best CatBoost Params:", study.best_params)
+
