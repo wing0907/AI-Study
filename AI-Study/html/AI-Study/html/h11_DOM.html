@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<head>
+    <title>DOM 예제</title>
+<!-- Document Object Model -->    
+</head>
+<body>
+    <h1 id="title">안녕하세요</h1>
+    <button onclick="changeText()">클릭하세요.</button>
+
+    <script>
+        function changeText(){
+            const title = document.getElementById('title')
+            title.textContent = '반갑습니다.'
+        }
+
+    </script>
+    
+</body>
+</html>
