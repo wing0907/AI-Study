@@ -1,0 +1,4 @@
+python d:\Study25WJ\gpt1\g01.py train_tokenizer ^
+  --corpus_dir d:\Study25WJ\gpt1\_data\text_corpus ^
+  --out_dir d:\Study25WJ\gpt1_tokenizer ^
+  --vocab_size 40000
